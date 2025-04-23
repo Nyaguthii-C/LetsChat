@@ -8,6 +8,10 @@ from .serializers import MessageSerializer, ConversationDetailSerializer, Conver
 from .services import GetStreamService
 from apps.users.models import CustomUser
 from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+
+
 
 class MessageCreateView(generics.CreateAPIView):
     """
@@ -97,6 +101,78 @@ class MessageCreateView(generics.CreateAPIView):
 
 
 
+class MessageUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Update the content of a message. Only the sender can update.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["content"],
+            properties={
+                "content": openapi.Schema(type=openapi.TYPE_STRING, description="Updated message content"),
+            },
+        ),
+        responses={
+            200: openapi.Response("Message updated successfully.", MessageSerializer),
+            400: "Content is required.",
+            403: "You are not authorized to update this message.",
+            404: "Message not found.",
+        }
+    )    
+
+    def patch(self, request, *args, **kwargs):
+        try:
+            message = Message.objects.get(id=kwargs['pk'])
+        except Message.DoesNotExist:
+            raise NotFound("Message not found.")
+
+        if message.sender != request.user:
+            raise PermissionDenied("You cannot update this message.")
+
+        content = request.data.get('content')
+        if not content:
+            raise ValidationError("Content is required.")
+
+        message.content = content
+        message.save()
+
+        message_data = MessageSerializer(message).data
+        return Response({
+            "success": True,
+            "message": "Message updated successfully.",
+            "data": message_data
+        }, status=status.HTTP_200_OK)
+
+
+
+class MessageDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Delete a message by ID. Only the sender or staff can delete.",
+        responses={
+            204: "Message deleted successfully.",
+            403: "You are not authorized to delete this message.",
+            404: "Message not found.",
+        }
+    )    
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            message = Message.objects.get(id=kwargs['pk'])
+        except Message.DoesNotExist:
+            raise NotFound("Message not found.")
+
+        if message.sender != request.user and not request.user.is_staff:
+            raise PermissionDenied("You are not authorized to delete this message.")
+
+        message.delete()
+
+        return Response({
+            "success": True,
+            "message": "Message deleted successfully."
+            }, status=status.HTTP_204_NO_CONTENT)
 
 
 
@@ -138,8 +214,6 @@ class ConversationListCreateView(generics.ListCreateAPIView):
             participants.append(self.request.user)
         conversation = serializer.save()
         conversation.participants.add(*participants)
-
-
 
 
 
