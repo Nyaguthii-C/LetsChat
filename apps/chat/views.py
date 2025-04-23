@@ -176,6 +176,42 @@ class MessageDeleteView(APIView):
 
 
 
+class MarkMessageReadView(APIView):
+    permission_classes = [IsAuthenticated]
+    @swagger_auto_schema(
+        operation_description="Mark a message as read",
+        responses={
+            200: "Mark a message as read.",
+            403: "You cannot mark this message as read.",
+            404: "Message not found.",
+        }
+    ) 
+
+    def patch(self, request, *args, **kwargs):
+        try:
+            message = Message.objects.get(id=kwargs['pk'])
+        except Message.DoesNotExist:
+            raise NotFound("Message not found.")
+
+        if message.receiver != request.user:
+            raise PermissionDenied("You cannot mark this message as read.")
+
+        message.is_read = True
+        message.save()
+
+        return Response({
+            "success": True,
+            "message": "Message marked as read."}, status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+
+
+
 class ConversationListCreateView(generics.ListCreateAPIView):
     """
     get:
@@ -237,4 +273,7 @@ class ConversationDetailView(generics.RetrieveAPIView):
         }
     )
     def get(self, request, *args, **kwargs):
+        # conversation = self.get_object()
+        # Automatically mark all messages as read
+        # conversation.messages.filter(is_read=False).update(is_read=True)        
         return super().get(request, *args, **kwargs)
