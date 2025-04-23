@@ -66,3 +66,24 @@ class MessageActionTests(APITestCase):
         url = reverse('message-update', kwargs={'pk': 999})
         response = self.client.patch(url, data={'content': 'Updated'})
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_receiver_can_mark_message_as_read(self):
+        self.client.force_authenticate(user=self.receiver)
+        url = reverse('message-mark-read', kwargs={'pk': self.message.id})
+        response = self.client.patch(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(Message.objects.get(id=self.message.id).is_read)
+        self.assertEqual(response.data['message'], "Message marked as read.")
+
+    def test_non_receiver_cannot_mark_message_as_read(self):
+        self.client.force_authenticate(user=self.sender)  # Sender trying to mark as read
+        url = reverse('message-mark-read', kwargs={'pk': self.message.id})
+        response = self.client.patch(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("cannot mark", str(response.data).lower())
+
+    def test_mark_read_nonexistent_message(self):
+        self.client.force_authenticate(user=self.receiver)
+        url = reverse('message-mark-read', kwargs={'pk': 999})
+        response = self.client.patch(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
