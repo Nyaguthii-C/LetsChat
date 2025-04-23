@@ -9,6 +9,8 @@ from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import AllowAny
+from django.contrib.auth import get_user_model
 
 
 def get_tokens_for_user(user):
@@ -109,3 +111,21 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_object(self):
         return self.request.user
 
+
+
+
+class UserListView(generics.ListAPIView):
+    queryset = get_user_model().objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(
+        operation_description="Retrieve a list of all users.",
+        operation_summary="Get all users",
+        responses={200: UserSerializer(many=True)}
+    )
+    def get(self, request, *args, **kwargs):
+        """
+        Retrieve a list of all users.
+        """
+        return super().get(request, *args, **kwargs)
