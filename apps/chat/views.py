@@ -3,13 +3,14 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from .models import Message, Conversation
-from .serializers import MessageSerializer, ConversationDetailSerializer, ConversationSerializer
+from .models import Message, Conversation, Reaction
+from .serializers import MessageSerializer, ConversationDetailSerializer, ConversationSerializer, ReactionSerializer
 from .services import GetStreamService
 from apps.users.models import CustomUser
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
+from rest_framework.pagination import PageNumberPagination
 
 
 
@@ -205,6 +206,79 @@ class MarkMessageReadView(APIView):
 
 
 
+
+class AddReactionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Add or update a reaction (emoji) to a message. Only one reaction per user per message.",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["emoji"],
+            properties={
+                "emoji": openapi.Schema(type=openapi.TYPE_STRING, description="Emoji reaction (e.g. 👍, ❤️)"),
+            },
+        ),
+        responses={
+            200: openapi.Response(description="Reaction added or updated successfully."),
+            400: "Emoji is required.",
+            401: "Authentication required.",
+            404: "Message not found.",
+        }
+    )
+    def post(self, request, message_id):
+        emoji = request.data.get('emoji')
+        user = request.user
+
+        try:
+            message = Message.objects.get(id=message_id)
+        except Message.DoesNotExist:
+            raise NotFound("Message not found.")
+
+        if not emoji:
+            raise ValidationError("Emoji is required.")
+
+        reaction, created = Reaction.objects.get_or_create(
+            message=message, user=user, defaults={'emoji': emoji}
+        )
+
+        if not created:
+            reaction.emoji = emoji
+            reaction.save()
+
+        return Response({"success": True, "message": "Reaction added successfully."})
+
+
+
+class RemoveReactionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Remove the current user's reaction from a message. Idempotent: returns 204 even if no reaction exists.",
+        responses={
+            204: "Reaction removed or no reaction found.",
+            401: "Authentication required.",
+            404: "Message not found.",
+        }
+    )
+    def delete(self, request, message_id):
+        user = request.user
+
+        try:
+            message = Message.objects.get(id=message_id)
+        except Message.DoesNotExist:
+            raise NotFound("Message not found.")
+
+        # find user's reaction
+        reaction = Reaction.objects.filter(message=message, user=user).first()
+
+        if reaction:
+            reaction.delete()
+
+        return Response(status=204)
+
+
+
 class ConversationListCreateView(generics.ListCreateAPIView):
     """
     get:
@@ -285,8 +359,5 @@ class ConversationDetailView(generics.RetrieveAPIView):
             404: "Conversation not found or access denied"
         }
     )
-    def get(self, request, *args, **kwargs):
-        # conversation = self.get_object()
-        # Automatically mark all messages as read
-        # conversation.messages.filter(is_read=False).update(is_read=True)        
-        return super().get(request, *args, **kwargs)
+    def get(self, request, *args, **kwargs):       
+        return super().get(request, *args, **kwargs)  

@@ -29,3 +29,14 @@ class Message(models.Model):
     class Meta:
         ordering = ['timestamp']
 
+
+class Reaction(models.Model):
+    message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='reactions')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    emoji = models.CharField(max_length=50)
+
+    class Meta:
+        unique_together = ('message', 'user')  # Prevent duplicate reactions by the same user
+
+    def __str__(self):
+        return f"{self.user.email} reacted with {self.emoji}"
