@@ -49,11 +49,12 @@ class MessageCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         sender = self.request.user
-        receiver = CustomUser.objects.get(id=self.request.data['receiver'])
+        receiver_id = self.request.data.get('receiver')
+        content = self.request.data.get('content')
 
         # Validate that content and receiver are provided
         if not receiver_id or not content:
-            raise ValidationError("Receiver and content are required.")
+            raise ValidationError({"receiver": "Receiver is required.", "content": "Content is required."})          #("Receiver and content are required.")
 
         try:
             receiver = CustomUser.objects.get(id=receiver_id)
@@ -71,7 +72,6 @@ class MessageCreateView(generics.CreateAPIView):
         stream_service = GetStreamService()
         channel = stream_service.create_or_get_channel(sender, receiver)
 
-        content = self.request.data['content']
         stream_service.send_message(channel, sender, receiver, content)
 
         message = Message.objects.create(
