@@ -205,13 +205,6 @@ class MarkMessageReadView(APIView):
 
 
 
-
-
-
-
-
-
-
 class ConversationListCreateView(generics.ListCreateAPIView):
     """
     get:
@@ -263,7 +256,27 @@ class ConversationDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Conversation.objects.filter(participants=self.request.user)
+        # return Conversation.objects.filter(participants=self.request.user)
+        queryset = Conversation.objects.filter(participants=self.request.user)
+        filter_params = self.request.query_params
+
+        # Filter by read status
+        is_read = filter_params.get('is_read')
+        if is_read is not None:
+            queryset = queryset.filter(messages__is_read=is_read)
+
+        # Filter by message content (search)
+        search = filter_params.get('search')
+        if search:
+            queryset = queryset.filter(messages__content__icontains=search)
+
+        # Filter by date range
+        created_at_start = filter_params.get('created_at_start')
+        created_at_end = filter_params.get('created_at_end')
+        if created_at_start and created_at_end:
+            queryset = queryset.filter(messages__created_at__range=[created_at_start, created_at_end])
+
+        return queryset        
 
     @swagger_auto_schema(
         operation_description="Retrieve a specific conversation by ID. The current user must be a participant.",
