@@ -36,7 +36,8 @@ class MessageCreateView(generics.CreateAPIView):
         responses={
             200: openapi.Response(description="Message sent successfully."),
             400: "Bad Request",
-            401: "Unauthorized"
+            401: "Unauthorized",
+            404: "Receiver not found",
         }
     )
     def post(self, request, *args, **kwargs):
@@ -46,6 +47,14 @@ class MessageCreateView(generics.CreateAPIView):
         sender = self.request.user
         receiver = CustomUser.objects.get(id=self.request.data['receiver'])
 
+        # Validate that content and receiver are provided
+        if not receiver_id or not content:
+            raise ValidationError("Receiver and content are required.")
+
+        try:
+            receiver = CustomUser.objects.get(id=receiver_id)
+        except CustomUser.DoesNotExist:
+            raise NotFound(f"Receiver with ID {receiver_id} not found.")
 
         conversation = Conversation.objects.filter(participants=sender)\
                                            .filter(participants=receiver)\
@@ -75,6 +84,8 @@ class MessageCreateView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        # Call perform_create to handle message creation logic
         self.perform_create(serializer)
 
         message_data = MessageSerializer(self.message_instance).data
