@@ -11,14 +11,57 @@ from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import get_user_model
+from django.http import JsonResponse
+from rest_framework.permissions import IsAuthenticated
 
 
-def get_tokens_for_user(user):
+def get_tokens_for_user(user, response=None):
     refresh = RefreshToken.for_user(user)
+
+    # Generate the tokens
+    access_token = str(refresh.access_token)
+    refresh_token = str(refresh)    
+
+    # If a response object is passed, set the refresh token in the HttpOnly cookie
+    if response is not None:
+        response.set_cookie(
+            'refresh_token',  # Cookie name
+            refresh_token,  # Value of the refresh token
+            httponly=True,  # Prevent access from JavaScript
+            secure=True,  # Only set cookie over HTTPS
+            samesite='Strict',  # Ensure the cookie is only sent with same-origin requests
+            max_age=60 * 60 * 24 * 30,  # Refresh token expires in 30 days (adjust as needed)
+        )
+    
+    # Return the tokens in a dictionary
     return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
+        'refresh': refresh_token,
+        'access': access_token
     }
+
+
+
+class RefreshTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Get the refresh token from the HttpOnly cookie
+        refresh_token = request.COOKIES.get('refresh_token')
+
+        if not refresh_token:
+            return Response({'error': 'No refresh token provided'}, status=400)
+
+        try:
+            # Use the refresh token to generate a new access token
+            refresh = RefreshToken(refresh_token)
+            new_access_token = str(refresh.access_token)
+
+            return Response({'access': new_access_token})
+
+        except Exception as e:
+            return Response({'error': 'Invalid refresh token'}, status=400)
+
+
 
 class RegisterView(generics.CreateAPIView):
     """
@@ -75,8 +118,20 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data
+
         tokens = get_tokens_for_user(user)
-        return Response(tokens)
+
+        user_data = UserSerializer(user).data
+
+        response = JsonResponse({
+            'access': tokens['access'],
+            'user': user_data,
+        })
+
+        # Get the full tokens, including refresh token in HttpOnly cookie
+        get_tokens_for_user(user, response=response)  # Set refresh token in cookie
+
+        return response
 
 
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
