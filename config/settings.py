@@ -18,8 +18,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+CORS_ALLOWED_ORIGINS = [
+    " http://localhost:8080",
+    " http://172.27.245.209:8080",
+]
 
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -34,6 +37,7 @@ INSTALLED_APPS = [
     'apps.users.apps.UsersConfig',
     'apps.chat.apps.ChatConfig',
     'apps.notifications.apps.NotificationsConfig',
+    'corsheaders',
 
 ]
 
@@ -45,6 +49,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
