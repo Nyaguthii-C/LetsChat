@@ -11,7 +11,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
-
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 
 
 class MessageCreateView(generics.CreateAPIView):
@@ -361,3 +361,25 @@ class ConversationDetailView(generics.RetrieveAPIView):
     )
     def get(self, request, *args, **kwargs):       
         return super().get(request, *args, **kwargs)  
+
+
+def get_conversation_between(user1, user2):
+    conversations = Conversation.objects.filter(participants=user1).filter(participants=user2)
+    return conversations.first()  # or .last() depending on need
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_conversation_with(request, user_email):
+    try:
+        other_user = CustomUser.objects.get(email=user_email)
+    except CustomUser.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+    conversation = get_conversation_between(request.user, other_user)
+
+    if conversation:
+        return Response({'id': conversation.id})
+    return Response({'id': None})
+
