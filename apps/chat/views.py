@@ -261,7 +261,7 @@ class RemoveReactionView(APIView):
             404: "Message not found.",
         }
     )
-    def delete(self, request, message_id):
+    def post(self, request, message_id):
         user = request.user
 
         try:
