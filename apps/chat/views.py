@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
-
+from django.db import transaction
 
 class MessageCreateView(generics.CreateAPIView):
     """
@@ -48,14 +48,53 @@ class MessageCreateView(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
+    # def perform_create(self, serializer):
+    #     sender = self.request.user
+    #     receiver_id = self.request.data.get('receiver')
+    #     content = self.request.data.get('content')
+
+    #     # Validate that content and receiver are provided
+    #     if not receiver_id or not content:
+    #         raise ValidationError({"receiver": "Receiver is required.", "content": "Content is required."})          #("Receiver and content are required.")
+
+    #     try:
+    #         receiver = CustomUser.objects.get(id=receiver_id)
+    #     except CustomUser.DoesNotExist:
+    #         raise NotFound(f"Receiver with ID {receiver_id} not found.")
+
+    #     conversation = Conversation.objects.filter(participants=sender)\
+    #                                        .filter(participants=receiver)\
+    #                                        .first()
+    #     if not conversation:
+    #         conversation = Conversation.objects.create()
+    #         conversation.participants.set([sender, receiver])
+
+
+    #     stream_service = GetStreamService()
+    #     channel = stream_service.create_or_get_channel(sender, receiver)
+
+    #     stream_service.send_message(channel, sender, receiver, content)
+
+    #     message = Message.objects.create(
+    #         sender=sender,
+    #         receiver=receiver,
+    #         content=content,
+    #         conversation=conversation,
+    #         is_read=False
+    #     )
+
+    #     self.message_instance = message
+
+
+
+
     def perform_create(self, serializer):
         sender = self.request.user
         receiver_id = self.request.data.get('receiver')
         content = self.request.data.get('content')
 
-        # Validate that content and receiver are provided
         if not receiver_id or not content:
-            raise ValidationError({"receiver": "Receiver is required.", "content": "Content is required."})          #("Receiver and content are required.")
+            raise ValidationError({"receiver": "Receiver is required.", "content": "Content is required."})
 
         try:
             receiver = CustomUser.objects.get(id=receiver_id)
@@ -63,27 +102,36 @@ class MessageCreateView(generics.CreateAPIView):
             raise NotFound(f"Receiver with ID {receiver_id} not found.")
 
         conversation = Conversation.objects.filter(participants=sender)\
-                                           .filter(participants=receiver)\
-                                           .first()
+                                        .filter(participants=receiver)\
+                                        .first()
         if not conversation:
             conversation = Conversation.objects.create()
             conversation.participants.set([sender, receiver])
-
 
         stream_service = GetStreamService()
         channel = stream_service.create_or_get_channel(sender, receiver)
 
         stream_service.send_message(channel, sender, receiver, content)
 
-        message = Message.objects.create(
+        self.message_instance = serializer.save(
             sender=sender,
             receiver=receiver,
             content=content,
             conversation=conversation,
             is_read=False
         )
+        
+        # print(f"Message created with ID: {self.message_instance.id}")
+        
+        # # Debug: Check if notifications were created for this message
+        # from apps.notifications.models import Notification
+        # notifications = Notification.objects.filter(message=self.message_instance)
+        # print(f"Found {notifications.count()} notifications for this message")
 
-        self.message_instance = message
+
+
+
+
 
     # for HTTP response
     def create(self, request, *args, **kwargs):
@@ -383,3 +431,62 @@ def get_conversation_with(request, user_email):
         return Response({'id': conversation.id})
     return Response({'id': None})
 
+
+
+
+
+
+# from django.dispatch import receiver
+# from django.db.models.signals import post_save
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def debug_signals(request):
+#     """
+#     Debug endpoint to test if signals are working properly
+#     """
+#     try:
+#         # Get the first other user to use as receiver
+#         receiver = CustomUser.objects.exclude(id=request.user.id).first()
+#         if not receiver:
+#             return Response({"error": "No other user found to use as receiver"}, status=400)
+        
+#         # Log current signal connections
+#         from django.db.models import signals
+#         print("\nCurrent post_save receivers:")
+#         for r in signals.post_save.receivers:
+#             print(f"  - {r}")
+        
+#         # Register test signal
+#         @receiver(post_save, sender=Message)
+#         def test_signal_handler(sender, instance, created, **kwargs):
+#             print(f"\n*** TEST SIGNAL FIRED: Message {instance.id} created={created} ***\n")
+        
+#         print("\nTest signal handler registered")
+        
+#         # Create a test message
+#         message = Message.objects.create(
+#             sender=request.user,
+#             receiver=receiver,
+#             content="Test message for debugging signals",
+#             is_read=False
+#         )
+        
+#         print(f"\nTest message created with ID: {message.id}")
+        
+#         # Check if notifications were created
+#         from apps.notifications.models import Notification
+#         notifications = Notification.objects.filter(message=message).count()
+        
+#         return Response({
+#             "success": True,
+#             "message_id": message.id,
+#             "receiver_id": receiver.id,
+#             "notifications_count": notifications,
+#             "message": "See server console for signal debug output"
+#         })
+#     except Exception as e:
+#         import traceback
+#         print(f"Error in debug_signals: {str(e)}")
+#         traceback.print_exc()
+#         return Response({"error": str(e)}, status=500)
