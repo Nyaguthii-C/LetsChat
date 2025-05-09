@@ -13,7 +13,7 @@ A real-time chat application built with Django, Django Channels, PostgreSQL, and
 - 🧪 Test-driven development using `pytest`
 - 🐘 PostgreSQL database
 - 🐳 Dockerized for consistent dev environment
-- 🖼️ Template-based frontend (login/signup/chat UI)
+- 🖼️ [LetsChat FrontEnd](https://github.com/Nyaguthii-C/letschat-frontend) (login/signup/chat UI)
 
 ---
 
@@ -25,7 +25,7 @@ A real-time chat application built with Django, Django Channels, PostgreSQL, and
 - **Docs**: Swagger / drf-yasg
 - **Testing**: Pytest, pytest-django
 - **DevOps**: Docker, Docker Compose
-- **Frontend**: HTML, CSS, Js
+- **Frontend**: Vite, TypeScript, React, shadcn-ui,Tailwind CSS ( initially scaffolded using lovable.dev, with custom integration and enhancements.)
 
 <!-- ---
 
@@ -100,7 +100,6 @@ LetsChat/
 │   ├── chat/
 │   └── notifications/
 ├── config/
-├── templates/
 ├── static/
 ├── manage.py
 └── requirements.txt
