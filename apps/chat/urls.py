@@ -14,4 +14,5 @@ urlpatterns = [
     path('conversations/all/', ConversationListCreateView.as_view(), name='conversation-list-create'),
     path('conversations/<int:pk>/', ConversationDetailView.as_view(), name='conversation-detail'),
     path('conversations/with/<user_email>/', views.get_conversation_with, name='conversation-with-user'),
+    path('debug-signals/', views.debug_signals, name='debug-signals'),
 ]

@@ -436,57 +436,57 @@ def get_conversation_with(request, user_email):
 
 
 
-# from django.dispatch import receiver
-# from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def debug_signals(request):
-#     """
-#     Debug endpoint to test if signals are working properly
-#     """
-#     try:
-#         # Get the first other user to use as receiver
-#         receiver = CustomUser.objects.exclude(id=request.user.id).first()
-#         if not receiver:
-#             return Response({"error": "No other user found to use as receiver"}, status=400)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def debug_signals(request):
+    """
+    Debug endpoint to test if signals are working properly
+    """
+    try:
+        # Get the first other user to use as receiver
+        receiver = CustomUser.objects.exclude(id=request.user.id).first()
+        if not receiver:
+            return Response({"error": "No other user found to use as receiver"}, status=400)
         
-#         # Log current signal connections
-#         from django.db.models import signals
-#         print("\nCurrent post_save receivers:")
-#         for r in signals.post_save.receivers:
-#             print(f"  - {r}")
+        # Log current signal connections
+        from django.db.models import signals
+        print("\nCurrent post_save receivers:")
+        for r in signals.post_save.receivers:
+            print(f"  - {r}")
         
-#         # Register test signal
-#         @receiver(post_save, sender=Message)
-#         def test_signal_handler(sender, instance, created, **kwargs):
-#             print(f"\n*** TEST SIGNAL FIRED: Message {instance.id} created={created} ***\n")
+        # Register test signal
+        @receiver(post_save, sender=Message)
+        def test_signal_handler(sender, instance, created, **kwargs):
+            print(f"\n*** TEST SIGNAL FIRED: Message {instance.id} created={created} ***\n")
         
-#         print("\nTest signal handler registered")
+        print("\nTest signal handler registered")
         
-#         # Create a test message
-#         message = Message.objects.create(
-#             sender=request.user,
-#             receiver=receiver,
-#             content="Test message for debugging signals",
-#             is_read=False
-#         )
+        # Create a test message
+        message = Message.objects.create(
+            sender=request.user,
+            receiver=receiver,
+            content="Test message for debugging signals",
+            is_read=False
+        )
         
-#         print(f"\nTest message created with ID: {message.id}")
+        print(f"\nTest message created with ID: {message.id}")
         
-#         # Check if notifications were created
-#         from apps.notifications.models import Notification
-#         notifications = Notification.objects.filter(message=message).count()
+        # Check if notifications were created
+        from apps.notifications.models import Notification
+        notifications = Notification.objects.filter(message=message).count()
         
-#         return Response({
-#             "success": True,
-#             "message_id": message.id,
-#             "receiver_id": receiver.id,
-#             "notifications_count": notifications,
-#             "message": "See server console for signal debug output"
-#         })
-#     except Exception as e:
-#         import traceback
-#         print(f"Error in debug_signals: {str(e)}")
-#         traceback.print_exc()
-#         return Response({"error": str(e)}, status=500)
+        return Response({
+            "success": True,
+            "message_id": message.id,
+            "receiver_id": receiver.id,
+            "notifications_count": notifications,
+            "message": "See server console for signal debug output"
+        })
+    except Exception as e:
+        import traceback
+        print(f"Error in debug_signals: {str(e)}")
+        traceback.print_exc()
+        return Response({"error": str(e)}, status=500)
