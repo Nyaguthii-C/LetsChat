@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'apps.chat.apps.ChatConfig',
     'apps.notifications.apps.NotificationsConfig',
     'corsheaders',
-    'debug_toolbar',
+    # 'debug_toolbar',
 
 ]
 
@@ -47,7 +47,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    # 'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -188,6 +188,6 @@ CHANNEL_LAYERS = {
 
 
 
-INTERNAL_IPS = [
-    "127.0.0.1",
-]
+# INTERNAL_IPS = [
+#     "127.0.0.1",
+# ]
