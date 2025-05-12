@@ -70,6 +70,10 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
+### 7. Collect static files
+```bash
+python manage.py collectstatic
+```
 ### 7. Run Server (supporting asgi)
 <!-- ```bash
 python manage.py runserver
