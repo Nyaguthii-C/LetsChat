@@ -70,9 +70,13 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-### 7. Run Server
-```bash
+### 7. Run Server (supporting asgi)
+<!-- ```bash
 python manage.py runserver
+``` -->
+
+```bash
+daphne config.asgi:application
 ```
 
 ## Running Tests
