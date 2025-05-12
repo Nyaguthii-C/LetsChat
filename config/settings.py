@@ -159,9 +159,6 @@ SIMPLE_JWT = {
 
 
 
-
-
-
 # media settings
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -170,20 +167,16 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 SWAGGER_USE_COMPAT_RENDERERS = False
 
 
-# config/settings.py
-
 # getsteam.io settings
 GETSTREAM_API_KEY = config('GETSTREAM_API_KEY')
 GETSTREAM_API_SECRET = config('GETSTREAM_API_SECRET')
 
 
-
 # websockets settings
 
+ASGI_APPLICATION = "config.asgi.application"
 
-ASGI_APPLICATION = "LetsChat.asgi.application"
-
-# Redis (assumed running on localhost)
+# Redis
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
