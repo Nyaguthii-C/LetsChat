@@ -7,7 +7,7 @@ from .models import CustomUser
 @admin.register(CustomUser)
 class CustomUserAdmin(BaseUserAdmin):
     model = CustomUser
-    list_display = ('email', 'full_name', 'is_staff', 'is_superuser', 'date_joined')
+    list_display = ('id', 'email', 'full_name', 'is_staff', 'is_superuser', 'date_joined')
     list_filter = ('is_staff', 'is_superuser', 'is_active')
     search_fields = ('email', 'full_name')
     ordering = ('-date_joined',)
