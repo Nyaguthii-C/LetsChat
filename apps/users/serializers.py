@@ -14,7 +14,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'full_name', 'password', 'profile_photo']
+        fields = ['id', 'email', 'full_name', 'password', 'profile_photo']
 
     def create(self, validated_data):
         user = CustomUser.objects.create_user(
@@ -42,7 +42,7 @@ class UpdateUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['full_name', 'email', 'password', 'profile_photo']
+        fields = ['id', 'full_name', 'email', 'password', 'profile_photo']
 
     def update(self, instance, validated_data):
         if 'email' in validated_data:

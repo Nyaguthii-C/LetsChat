@@ -15,8 +15,8 @@ class ReactionSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    sender = serializers.SlugRelatedField(slug_field='email', read_only=True)
-    receiver = serializers.SlugRelatedField(slug_field='email', read_only=True)
+    sender = serializers.SlugRelatedField(slug_field='id', read_only=True)
+    receiver = serializers.SlugRelatedField(slug_field='id', read_only=True)
     conversation = serializers.PrimaryKeyRelatedField(read_only=True)
     reactions = ReactionSerializer(many=True, read_only=True)
 
