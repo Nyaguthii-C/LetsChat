@@ -13,6 +13,11 @@ from rest_framework.exceptions import NotFound, PermissionDenied, ValidationErro
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from django.db import transaction
+from apps.notifications.utils import notify_user
+from uuid import uuid4
+import uuid
+
+
 
 class MessageCreateView(generics.CreateAPIView):
     """
@@ -48,44 +53,6 @@ class MessageCreateView(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
-    # def perform_create(self, serializer):
-    #     sender = self.request.user
-    #     receiver_id = self.request.data.get('receiver')
-    #     content = self.request.data.get('content')
-
-    #     # Validate that content and receiver are provided
-    #     if not receiver_id or not content:
-    #         raise ValidationError({"receiver": "Receiver is required.", "content": "Content is required."})          #("Receiver and content are required.")
-
-    #     try:
-    #         receiver = CustomUser.objects.get(id=receiver_id)
-    #     except CustomUser.DoesNotExist:
-    #         raise NotFound(f"Receiver with ID {receiver_id} not found.")
-
-    #     conversation = Conversation.objects.filter(participants=sender)\
-    #                                        .filter(participants=receiver)\
-    #                                        .first()
-    #     if not conversation:
-    #         conversation = Conversation.objects.create()
-    #         conversation.participants.set([sender, receiver])
-
-
-    #     stream_service = GetStreamService()
-    #     channel = stream_service.create_or_get_channel(sender, receiver)
-
-    #     stream_service.send_message(channel, sender, receiver, content)
-
-    #     message = Message.objects.create(
-    #         sender=sender,
-    #         receiver=receiver,
-    #         content=content,
-    #         conversation=conversation,
-    #         is_read=False
-    #     )
-
-    #     self.message_instance = message
-
-
 
 
     def perform_create(self, serializer):
@@ -120,18 +87,18 @@ class MessageCreateView(generics.CreateAPIView):
             conversation=conversation,
             is_read=False
         )
+
+        notify_user(
+            user_id=receiver.id,
+            notification_type='new_message',
+            data={
+              'id': str(uuid.uuid4()),  # Generate a unique ID
+              'message_id': self.message_instance.id,
+              'sender_id': sender.id,
+              'content': self.message_instance.content
+            }
+        )
         
-        # print(f"Message created with ID: {self.message_instance.id}")
-        
-        # # Debug: Check if notifications were created for this message
-        # from apps.notifications.models import Notification
-        # notifications = Notification.objects.filter(message=self.message_instance)
-        # print(f"Found {notifications.count()} notifications for this message")
-
-
-
-
-
 
     # for HTTP response
     def create(self, request, *args, **kwargs):
@@ -289,6 +256,16 @@ class AddReactionView(APIView):
         reaction, created = Reaction.objects.get_or_create(
             message=message, user=user, defaults={'emoji': emoji}
         )
+        notify_user(
+            user_id=message.sender.id,
+            notification_type='reaction',
+            data={
+                'id': str(uuid.uuid4()),
+                'message_id': message.id,
+                'user_id': user.id,
+                'reaction_type': emoji
+            }
+        )
 
         if not created:
             reaction.emoji = emoji
@@ -434,10 +411,11 @@ def get_conversation_with(request, user_email):
 
 
 
-
-
 from django.dispatch import receiver
 from django.db.models.signals import post_save
+import traceback
+from django.contrib.auth import get_user_model
+from apps.notifications.models import Notification
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -447,9 +425,18 @@ def debug_signals(request):
     """
     try:
         # Get the first other user to use as receiver
-        receiver = CustomUser.objects.exclude(id=request.user.id).first()
-        if not receiver:
+        receiver_user = CustomUser.objects.exclude(id=request.user.id).first()
+        if not receiver_user:
             return Response({"error": "No other user found to use as receiver"}, status=400)
+        
+        # Find or create a conversation between sender and receiver
+        conversation = Conversation.objects.filter(participants=request.user)\
+                                           .filter(participants=receiver_user)\
+                                           .first()
+        
+        if not conversation:
+            conversation = Conversation.objects.create()
+            conversation.participants.set([request.user, receiver_user])
         
         # Log current signal connections
         from django.db.models import signals
@@ -457,17 +444,29 @@ def debug_signals(request):
         for r in signals.post_save.receivers:
             print(f"  - {r}")
         
-        # Register test signal
+        # Dynamically register test signal handler
         @receiver(post_save, sender=Message)
         def test_signal_handler(sender, instance, created, **kwargs):
             print(f"\n*** TEST SIGNAL FIRED: Message {instance.id} created={created} ***\n")
+            
+            # Create notification if not exists
+            if created:
+                Notification.objects.get_or_create(
+                    user=instance.receiver,
+                    message=instance,
+                    defaults={
+                        'is_read': False,
+                        'notification_type': 'message'
+                    }
+                )
         
         print("\nTest signal handler registered")
         
         # Create a test message
         message = Message.objects.create(
             sender=request.user,
-            receiver=receiver,
+            receiver=receiver_user,
+            conversation=conversation,
             content="Test message for debugging signals",
             is_read=False
         )
@@ -475,18 +474,18 @@ def debug_signals(request):
         print(f"\nTest message created with ID: {message.id}")
         
         # Check if notifications were created
-        from apps.notifications.models import Notification
         notifications = Notification.objects.filter(message=message).count()
         
         return Response({
             "success": True,
             "message_id": message.id,
-            "receiver_id": receiver.id,
+            "conversation_id": conversation.id,
+            "receiver_id": receiver_user.id,
             "notifications_count": notifications,
             "message": "See server console for signal debug output"
         })
+    
     except Exception as e:
-        import traceback
         print(f"Error in debug_signals: {str(e)}")
         traceback.print_exc()
         return Response({"error": str(e)}, status=500)
