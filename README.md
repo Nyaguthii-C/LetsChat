@@ -60,6 +60,12 @@ pip install -r requirements.txt
 ```
 GETSTREAM_API_KEY=valuehere
 GETSTEAM_PASSWORD=valuehere
+POSTGRES_DB=valuehere
+POSTGRES_USER=valuehere
+POSTGRES_PASSWORD=valuehere
+DJANGO_SECRET_KEY=valuehere
+DEBUG=TrueOrFalse
+REDIS_URL=valuehere
 ```
 ### 5. Configure Database
 Set up PostgreSQL and update .env (see .env.example).
