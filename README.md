@@ -112,14 +112,17 @@ Swagger Docs: http://localhost:8000/swagger/
 ```
 
 3. Common Docker Commands
-```bash
+
 ### Stop all services
+```bash
 docker-compose down
-
+```
 ### View logs from web app
+```bash
 docker-compose logs -f web
-
+```
 ### Bash into the web container
+```bash
 docker-compose exec web bash
 ```
 
