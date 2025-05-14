@@ -95,10 +95,34 @@ http://localhost:8000/swagger/
 
 ```
 
-## Docker Setup (optional)
+## 🐳 Docker Setup (Optional, Recomended for Consistency)
+
+
+1. Build and Run the Containers
+
 ```bash
 docker-compose up --build
 ```
+
+2. Access App
+```bash
+API: http://localhost:8000
+
+Swagger Docs: http://localhost:8000/swagger/
+```
+
+3. Common Docker Commands
+```bash
+### Stop all services
+docker-compose down
+
+### View logs from web app
+docker-compose logs -f web
+
+### Bash into the web container
+docker-compose exec web bash
+```
+
 
 ## Project Structure
 ```bash
@@ -108,11 +132,14 @@ LetsChat/
 │   ├── chat/
 │   └── notifications/
 ├── config/
-├── static/
+├── staticfiles/
 ├── manage.py
-└── requirements.txt
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+└── .env
 
 ```
 
 ## Author
-Nyaguthii Carol [@Nyaguthii-C]
+[Nyaguthii Carol](https://github.com/Nyaguthii-C)
