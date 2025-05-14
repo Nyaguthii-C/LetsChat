@@ -80,6 +80,8 @@ class MessageCreateView(generics.CreateAPIView):
 
         stream_service.send_message(channel, sender, receiver, content)
 
+        print(f'ATTEMPTING TO SAVE MESSAGE WITH SENDER: {sender} and receiver: {receiver}')
+
         self.message_instance = serializer.save(
             sender=sender,
             receiver=receiver,
@@ -88,17 +90,46 @@ class MessageCreateView(generics.CreateAPIView):
             is_read=False
         )
 
+
+
+        import pprint
+        pprint.pprint({
+            'id': str(uuid.uuid4()),
+            'message_id': self.message_instance.id,
+            'sender_id': sender.id,
+            'content': self.message_instance.content
+        })
+
+
+
+        # notify_user(
+        #     user_id=receiver.id,
+        #     notification_type='new_message',
+        #     data={
+        #       'id': str(uuid.uuid4()),  # Generate a unique ID
+        #       'message_id': self.message_instance.id,
+        #       'sender_id': sender.id,
+        #       'content': self.message_instance.content
+        #     }
+        # )
+
+
+
+        message_data = MessageSerializer(self.message_instance).data
+
         notify_user(
             user_id=receiver.id,
             notification_type='new_message',
-            data={
-              'id': str(uuid.uuid4()),  # Generate a unique ID
-              'message_id': self.message_instance.id,
-              'sender_id': sender.id,
-              'content': self.message_instance.content
-            }
+            data=message_data  # This is now safe
         )
-        
+
+
+
+
+
+
+
+
 
     # for HTTP response
     def create(self, request, *args, **kwargs):
