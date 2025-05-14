@@ -80,8 +80,6 @@ class MessageCreateView(generics.CreateAPIView):
 
         stream_service.send_message(channel, sender, receiver, content)
 
-        print(f'ATTEMPTING TO SAVE MESSAGE WITH SENDER: {sender} and receiver: {receiver}')
-
         self.message_instance = serializer.save(
             sender=sender,
             receiver=receiver,
@@ -91,30 +89,6 @@ class MessageCreateView(generics.CreateAPIView):
         )
 
 
-
-        import pprint
-        pprint.pprint({
-            'id': str(uuid.uuid4()),
-            'message_id': self.message_instance.id,
-            'sender_id': sender.id,
-            'content': self.message_instance.content
-        })
-
-
-
-        # notify_user(
-        #     user_id=receiver.id,
-        #     notification_type='new_message',
-        #     data={
-        #       'id': str(uuid.uuid4()),  # Generate a unique ID
-        #       'message_id': self.message_instance.id,
-        #       'sender_id': sender.id,
-        #       'content': self.message_instance.content
-        #     }
-        # )
-
-
-
         message_data = MessageSerializer(self.message_instance).data
 
         notify_user(
@@ -122,13 +96,6 @@ class MessageCreateView(generics.CreateAPIView):
             notification_type='new_message',
             data=message_data  # This is now safe
         )
-
-
-
-
-
-
-
 
 
     # for HTTP response
@@ -471,14 +438,12 @@ def debug_signals(request):
         
         # Log current signal connections
         from django.db.models import signals
-        print("\nCurrent post_save receivers:")
         for r in signals.post_save.receivers:
             print(f"  - {r}")
         
         # Dynamically register test signal handler
         @receiver(post_save, sender=Message)
         def test_signal_handler(sender, instance, created, **kwargs):
-            print(f"\n*** TEST SIGNAL FIRED: Message {instance.id} created={created} ***\n")
             
             # Create notification if not exists
             if created:
@@ -490,8 +455,7 @@ def debug_signals(request):
                         'notification_type': 'message'
                     }
                 )
-        
-        print("\nTest signal handler registered")
+
         
         # Create a test message
         message = Message.objects.create(
@@ -502,7 +466,6 @@ def debug_signals(request):
             is_read=False
         )
         
-        print(f"\nTest message created with ID: {message.id}")
         
         # Check if notifications were created
         notifications = Notification.objects.filter(message=message).count()
