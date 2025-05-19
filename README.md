@@ -69,6 +69,42 @@ REDIS_URL=valuehere
 ```
 ### 5. Configure Database
 Set up PostgreSQL and update .env (see .env.example).
+<!-- Create a PostgreSQL database and user (if not already created).
+#### Log in to PostgreSQL:
+   Open your terminal and log in to the PostgreSQL command line interface:
+
+   ```bash
+   psql -U postgres
+   ```
+
+   (Replace `postgres` with your username if you use a different PostgreSQL username.)
+
+#### Create a Database:
+   To create a new database, run:
+
+   ```sql
+   CREATE DATABASE your_db_name;
+   ```
+
+#### Create a User:
+   Create a user (if it doesn’t exist) with a password:
+
+   ```sql
+   CREATE USER your_db_user WITH PASSWORD 'your_db_password';
+   ```
+
+#### Grant Privileges:
+   Grant all privileges on the database to the user:
+
+   ```sql
+   GRANT ALL PRIVILEGES ON DATABASE your_db_name TO your_db_user;
+   ```
+
+#### Exit PostgreSQL:
+
+   ```sql
+   \q
+   ``` -->
 
 ### 6. Run Migrations
 ```bash
@@ -103,11 +139,16 @@ http://localhost:8000/swagger/
 
 ## 🐳 Docker Setup (Optional, Recomended for Consistency)
 
+<!-- 0. Installing Docker and Docker Compose
+```bash
+sudo apt update && sudo apt install docker.io docker-compose -y
+sudo systemctl enable docker -->
+```
 
 1. Build and Run the Containers
 
 ```bash
-docker-compose up --build
+sudo docker-compose up --build
 ```
 
 2. Access App

@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    netcat gcc libpq-dev && \
+    netcat-openbsd gcc libpq-dev && \
     apt-get clean
 
 # Install Python dependencies
