@@ -261,7 +261,7 @@ class AddReactionView(APIView):
                 'id': str(uuid.uuid4()),
                 'message_id': message.id,
                 'user_id': user.id,
-                'reaction_type': emoji
+                'emoji': emoji
             }
         )
 
@@ -388,7 +388,7 @@ class ConversationDetailView(generics.RetrieveAPIView):
 
 def get_conversation_between(user1, user2):
     conversations = Conversation.objects.filter(participants=user1).filter(participants=user2)
-    return conversations.first()  # or .last() depending on need
+    return conversations.first()
 
 
 
@@ -405,81 +405,3 @@ def get_conversation_with(request, user_email):
     if conversation:
         return Response({'id': conversation.id})
     return Response({'id': None})
-
-
-
-
-from django.dispatch import receiver
-from django.db.models.signals import post_save
-import traceback
-from django.contrib.auth import get_user_model
-from apps.notifications.models import Notification
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def debug_signals(request):
-    """
-    Debug endpoint to test if signals are working properly
-    """
-    try:
-        # Get the first other user to use as receiver
-        receiver_user = CustomUser.objects.exclude(id=request.user.id).first()
-        if not receiver_user:
-            return Response({"error": "No other user found to use as receiver"}, status=400)
-        
-        # Find or create a conversation between sender and receiver
-        conversation = Conversation.objects.filter(participants=request.user)\
-                                           .filter(participants=receiver_user)\
-                                           .first()
-        
-        if not conversation:
-            conversation = Conversation.objects.create()
-            conversation.participants.set([request.user, receiver_user])
-        
-        # Log current signal connections
-        from django.db.models import signals
-        for r in signals.post_save.receivers:
-            print(f"  - {r}")
-        
-        # Dynamically register test signal handler
-        @receiver(post_save, sender=Message)
-        def test_signal_handler(sender, instance, created, **kwargs):
-            
-            # Create notification if not exists
-            if created:
-                Notification.objects.get_or_create(
-                    user=instance.receiver,
-                    message=instance,
-                    defaults={
-                        'is_read': False,
-                        'notification_type': 'message'
-                    }
-                )
-
-        
-        # Create a test message
-        message = Message.objects.create(
-            sender=request.user,
-            receiver=receiver_user,
-            conversation=conversation,
-            content="Test message for debugging signals",
-            is_read=False
-        )
-        
-        
-        # Check if notifications were created
-        notifications = Notification.objects.filter(message=message).count()
-        
-        return Response({
-            "success": True,
-            "message_id": message.id,
-            "conversation_id": conversation.id,
-            "receiver_id": receiver_user.id,
-            "notifications_count": notifications,
-            "message": "See server console for signal debug output"
-        })
-    
-    except Exception as e:
-        print(f"Error in debug_signals: {str(e)}")
-        traceback.print_exc()
-        return Response({"error": str(e)}, status=500)

@@ -55,7 +55,6 @@ def handle_reaction(sender, instance, created, **kwargs):
                 notification_type="reaction"
             )
             
-            print(f"Reaction notification created: {notification.id}")
             logger.info(f"Reaction notification created: {notification.id}")
             
             # Send real-time notification
