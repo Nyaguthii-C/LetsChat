@@ -1,6 +1,9 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.utils import timezone
+from apps.notifications.models import Notification
+from apps.notifications.utils import mark_notifications_as_seen
+
 
 class NotificationConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -71,7 +74,6 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         """
         Fetch unread notifications for a user
         """
-        from apps.notifications.models import Notification
         
         notifications = Notification.objects.filter(
             user_id=user_id, 
@@ -83,7 +85,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
                 "id": str(notif.id),
                 "type": notif.notification_type,
                 "userName": notif.message.sender.full_name if notif.message else "System",
-                "userAvatar": notif.message.sender.profile.avatar.url if notif.message and hasattr(notif.message.sender, 'profile') and notif.message.sender.profile.avatar else None,
+                "userAvatar": notif.message.sender.profile_photo.url if notif.message.sender.profile_photo else None,
                 "timeAgo": self.format_time_ago(notif.created_at),
                 "unread": True,
                 "content": notif.message.content if notif.message else None,
@@ -95,10 +97,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
     def mark_notifications_seen(self, notification_ids):
         """
         Mark specific notifications as seen
-        """
-        from apps.notifications.models import Notification
-        from apps.notifications.utils import mark_notifications_as_seen
-        
+        """        
         # Convert string IDs to integers
         notification_ids = [int(id) for id in notification_ids]
         

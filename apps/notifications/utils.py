@@ -1,6 +1,8 @@
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import json
+from apps.notifications.models import Notification
+from django.contrib.auth import get_user_model
 
 def notify_user(user_id, notification_type, data):
     channel_layer = get_channel_layer()
@@ -24,14 +26,13 @@ def notify_user(user_id, notification_type, data):
     
     # For reaction notifications, include user data (who reacted)
     if notification_type == 'reaction' and 'user_id' in data:
-        from django.contrib.auth import get_user_model
         User = get_user_model()
         try:
             user = User.objects.get(id=data['user_id'])
             data['reactor_data'] = {
                 'id': user.id,
                 'name': user.full_name,
-                'profile_photo': user.profile_photo if user.profile.photo else None,
+                'profile_photo': user.profile_photo if user.profile_photo else None,
             }
         except User.DoesNotExist:
             pass
@@ -50,8 +51,7 @@ def mark_notifications_as_seen(user_id, notification_ids=None):
     If notification_ids is provided, only mark those notifications
     Otherwise mark all unseen notifications for the user
     """
-    from apps.notifications.models import Notification
-    
+ 
     notifications = Notification.objects.filter(user_id=user_id, is_seen=False)
     if notification_ids:
         notifications = notifications.filter(id__in=notification_ids)

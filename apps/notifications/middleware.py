@@ -5,10 +5,11 @@ from django.conf import settings
 import jwt
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 from urllib.parse import parse_qs
+from django.contrib.auth import get_user_model
+
 
 @database_sync_to_async
 def get_user(user_id):
-    from django.contrib.auth import get_user_model
     User = get_user_model()
     try:
         return User.objects.get(id=user_id)
