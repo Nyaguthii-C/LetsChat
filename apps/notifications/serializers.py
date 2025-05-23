@@ -16,7 +16,7 @@ class UserMinimalSerializer(serializers.ModelSerializer):
     
     def get_profile_photo(self, obj):
         if obj.profile_photo:
-            return obj.profile_photo
+            return obj.profile_photo.url
         return None
     
     def get_full_name(self, obj):
