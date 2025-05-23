@@ -45,13 +45,14 @@ def handle_reaction(sender, instance, created, **kwargs):
     print(f"Signal handle_reaction fired. Reaction ID: {instance.id}, Created: {created}")
     logger.info(f"Signal handle_reaction fired. Reaction ID: {instance.id}, Created: {created}")
     
-    # Only notify if it's a new reaction or the emoji changed
+    # Only notify if it's a new reaction
     if created or getattr(instance, '_loaded_values', {}).get('emoji') != instance.emoji:
         try:
             # Create database notification
             notification = Notification.objects.create(
                 user=instance.message.sender if instance.message.sender != instance.user else instance.message.receiver,
                 message=instance.message,
+                reaction=instance,
                 notification_type="reaction"
             )
             
