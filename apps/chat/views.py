@@ -254,15 +254,20 @@ class AddReactionView(APIView):
         reaction, created = Reaction.objects.get_or_create(
             message=message, user=user, defaults={'emoji': emoji}
         )
+
+        data = {
+            'id': str(uuid.uuid4()),
+            'message_id': message.id,
+            'emoji': emoji,
+            'reactor_data': {
+                'full_name': user.full_name,
+            }
+        }
+
         notify_user(
             user_id=message.sender.id,
             notification_type='reaction',
-            data={
-                'id': str(uuid.uuid4()),
-                'message_id': message.id,
-                'user_id': user.id,
-                'emoji': emoji
-            }
+            data=data
         )
 
         if not created:
