@@ -12,14 +12,13 @@ def notify_user(user_id, notification_type, data):
     
     # For message notifications, include sender data
     if notification_type == 'new_message' and 'sender_id' in data:
-        from django.contrib.auth import get_user_model
         User = get_user_model()
         try:
             sender = User.objects.get(id=data['sender_id'])
             data['sender_data'] = {
                 'id': sender.id,
                 'name': sender.full_name,
-                'profile_photo': sender.profile_photo.url if sender.profile_photo else None,
+                # 'profile_photo': sender.profile_photo.url if sender.profile_photo else None,
             }
         except User.DoesNotExist:
             pass
@@ -32,7 +31,7 @@ def notify_user(user_id, notification_type, data):
             data['reactor_data'] = {
                 'id': user.id,
                 'name': user.full_name,
-                'profile_photo': user.profile_photo if user.profile_photo else None,
+                # 'profile_photo': user.profile_photo if user.profile_photo else None,
             }
         except User.DoesNotExist:
             pass
