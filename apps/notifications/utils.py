@@ -19,7 +19,7 @@ def notify_user(user_id, notification_type, data):
             data['sender_data'] = {
                 'id': sender.id,
                 'name': sender.full_name,
-                'profile_photo': sender.profile_photo if sender.profile_photo else None,
+                'profile_photo': sender.profile_photo.url if sender.profile_photo else None,
             }
         except User.DoesNotExist:
             pass
