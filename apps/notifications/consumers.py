@@ -55,6 +55,19 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
     async def reaction(self, event):
         await self.send_json(event["data"])
 
+    async def reaction_added(self, event):
+        """
+        Specific handler for reaction added events
+        """
+        await self.send_json(event["data"])
+    
+    async def reaction_removed(self, event):
+        """
+        Specific handler for reaction removed events
+        """
+        await self.send_json(event["data"])
+
+
 
     # Handler for 'notifications_seen' message type
     async def notifications_seen(self, event):
@@ -68,30 +81,31 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
 
     
-    # Database async methods
     @database_sync_to_async
     def get_unread_notifications(self, user_id):
-        """
-        Fetch unread notifications for a user
-        """
-        
         notifications = Notification.objects.filter(
             user_id=user_id, 
             is_seen=False
-        ).order_by('-created_at')[:10]  # Limit to 10 most recent
-        
+        ).order_by('-created_at')[:10]
+
         return [
             {
                 "id": str(notif.id),
                 "type": notif.notification_type,
-                "userName": notif.message.sender.full_name if notif.message else "System",
-                "userAvatar": notif.message.sender.profile_photo.url if notif.message.sender.profile_photo else None,
+                "userName": (
+                    notif.reaction.user.full_name if notif.notification_type == 'reaction' and notif.reaction
+                    else notif.message.sender.full_name if notif.message else "System"
+                ),
                 "timeAgo": self.format_time_ago(notif.created_at),
                 "unread": True,
                 "content": notif.message.content if notif.message else None,
-                "messageId": notif.message.id if notif.message else None
+                "messageId": notif.message.id if notif.message else None,
+                "reactor_data": {
+                    "full_name": notif.reaction.user.full_name,
+                } if notif.notification_type == 'reaction' and notif.reaction else None,
             } for notif in notifications
         ]
+
 
     @database_sync_to_async
     def mark_notifications_seen(self, notification_ids):
