@@ -13,7 +13,6 @@ from channels.routing import ProtocolTypeRouter
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
-# Only import after setting up Django environment
 django_asgi_app = get_asgi_application()
 
 # Delay imports that depend on Django setup

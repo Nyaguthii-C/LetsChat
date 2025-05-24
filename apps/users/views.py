@@ -18,7 +18,6 @@ from rest_framework.permissions import IsAuthenticated
 def get_tokens_for_user(user, response=None):
     refresh = RefreshToken.for_user(user)
 
-    # Generate the tokens
     access_token = str(refresh.access_token)
     refresh_token = str(refresh)    
 

@@ -2,7 +2,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from apps.chat.models import Message, Conversation  # adjust import if needed
+from apps.chat.models import Message, Conversation
 
 User = get_user_model()
 
