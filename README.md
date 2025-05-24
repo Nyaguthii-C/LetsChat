@@ -1,6 +1,6 @@
 # LetsChat
 
-A real-time chat application built with Django, Django Channels, PostgreSQL, and WebSockets. Supports user registration, authentication, private messaging, and live notifications — all containerized with Docker and tested using TDD.
+A real-time chat application built with Django, Django Channels, PostgreSQL, and WebSockets. Supports user registration, authentication, private messaging, and live notifications, all containerized with Docker and tested using TDD.
 
 ---
 
