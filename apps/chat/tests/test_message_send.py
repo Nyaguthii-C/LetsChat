@@ -29,8 +29,8 @@ class MessageSendTests(APITestCase):
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(response.data['success'])
-        self.assertEqual(response.data['data']['sender'], self.sender.email)
-        self.assertEqual(response.data['data']['receiver'], self.receiver.email)
+        self.assertEqual(response.data['data']['sender'], self.sender.id)
+        self.assertEqual(response.data['data']['receiver'], self.receiver.id)
         self.assertEqual(response.data['data']['content'], 'Hello there!')
 
     def test_missing_content_or_receiver(self):

@@ -32,7 +32,7 @@ def auth_client(api_client, create_user):
         'email': user.email,
         'password': 'testpass123'
     })
-    token = response.data['access']
+    token = response.json()['access']
     api_client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
     return api_client, user
 
@@ -70,7 +70,7 @@ def test_login_user(api_client, create_user):
         'password': 'testpass123'
     })
     assert response.status_code == 200
-    assert 'access' in response.data
+    assert 'access' in response.json()
 
 
 def test_login_invalid_credentials(api_client):
@@ -89,15 +89,16 @@ def test_login_returns_token(api_client, create_user):
     url = reverse("login")
     response = api_client.post(url, {"email": "tester@example.com", "password": "secret123"})
     assert response.status_code == 200
-    assert "access" in response.data
-    assert "refresh" in response.data
+    assert "access" in response.json()
+    assert "refresh_token" in response.cookies
+
 
 
 def test_get_user_profile(auth_client):
     client, user = auth_client
     response = client.get(reverse('user-detail'))
     assert response.status_code == 200
-    assert response.data['email'] == user.email
+    assert response.json()['email'] == user.email
 
 
 def test_update_user_profile(auth_client):
