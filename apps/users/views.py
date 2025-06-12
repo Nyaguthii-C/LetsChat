@@ -27,10 +27,13 @@ def get_tokens_for_user(user, response=None):
             'refresh_token',  # Cookie name
             refresh_token,  # Value of the refresh token
             httponly=True,  # Prevent access from JavaScript
-            secure=True,  # Only set cookie over HTTPS
-            samesite='Strict',  # Ensure the cookie is only sent with same-origin requests
-            max_age=60 * 60 * 24 * 30,  # Refresh token expires in 30 days (adjust as needed)
-        )
+            secure=False,  # Only set cookie over HTTPS(set fals in development)
+            samesite='Lax',  # Ensures the cookie is only sent with same-origin requests('strict' for prod., 'lax'-dev)
+            max_age=60 * 60 * 24 * 30,  # Refresh token expires in 30 days
+            path='/',
+            domain='127.0.0.1',
+        )        
+
     
     # Return the tokens in a dictionary
     return {
@@ -41,12 +44,12 @@ def get_tokens_for_user(user, response=None):
 
 
 class RefreshTokenView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
         # Get the refresh token from the HttpOnly cookie
         refresh_token = request.COOKIES.get('refresh_token')
-
+        
         if not refresh_token:
             return Response({'error': 'No refresh token provided'}, status=400)
 
@@ -54,8 +57,8 @@ class RefreshTokenView(APIView):
             # Use the refresh token to generate a new access token
             refresh = RefreshToken(refresh_token)
             new_access_token = str(refresh.access_token)
-
             return Response({'access': new_access_token})
+         
 
         except Exception as e:
             return Response({'error': 'Invalid refresh token'}, status=400)
@@ -128,9 +131,10 @@ class LoginView(APIView):
         })
 
         # Get the full tokens, including refresh token in HttpOnly cookie
-        get_tokens_for_user(user, response=response)  # Set refresh token in cookie
+        get_tokens_for_user(user, response=response) # Set refresh token in cookie
 
         return response
+
 
 
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
